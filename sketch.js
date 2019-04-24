@@ -21,6 +21,56 @@ const snodeCols = {
   [stateEnum.snodeMessage]: propCol,
 };
 
+class Snode {
+  constructor(swarm, pubkey) {
+    const swarmX = swarm.x;
+    const swarmY = swarm.y;
+    const snodes = swarm.snodes;
+    while(true) {
+      let overlapping = false;
+      const a = random() * 2 * PI;
+      const r = swarmRadius * Math.sqrt(random()) - snodeRadius * 2;
+      this.x = r * Math.cos(a) + swarmX;
+      this.y = r * Math.sin(a) + swarmY;
+
+      Object.keys(snodes).forEach(pubkey => {
+        const other = snodes[pubkey];
+        const d = dist(this.x, this.y, other.x, other.y);
+        if (d < snodeRadius + snodeRadius + 6) {
+          overlapping = true;
+        }
+      });
+      if (!overlapping) {
+        break;
+      }
+    }
+    this.radius = snodeRadius;
+    this.diameter = 2 * snodeRadius;
+    this.pubkey = pubkey;
+    this.state = stateEnum.default;
+
+    this.over = false;
+  }
+
+  // Check if mouse is over the snode
+  rollover(px, py) {
+    let d = dist(px, py, this.x, this.y);
+    this.over = d < this.radius;
+  }
+
+  // Display the Bubble
+  display() {
+    const col = snodeCols[this.state];
+    fill(col.r, col.g, col.b, 100);
+    ellipse(this.x, this.y, this.diameter, this.diameter);
+    if (this.over) {
+      fill(0);
+      textAlign(CENTER);
+      text(this.pubkey, this.x, this.y + this.radius + 20);
+    }
+  }
+}
+
 const createSwarm = (swarmId) => {
   let x, y, r;
   while(true) {
@@ -50,38 +100,6 @@ const createSwarm = (swarmId) => {
   swarms[swarmId] = swarm;
 }
 
-const createSnode = (swarm, pubkey) => {
-  const swarmX = swarm.x;
-  const swarmY = swarm.y;
-  const snodes = swarm.snodes;
-  let x, y, r;
-  while(true) {
-    let overlapping = false;
-    const a = random() * 2 * PI;
-    r = swarmRadius * Math.sqrt(random()) - snodeRadius * 2;
-    x = r * Math.cos(a) + swarmX;
-    y = r * Math.sin(a) + swarmY;
-
-    Object.keys(snodes).forEach(pubkey => {
-      const other = snodes[pubkey];
-      const d = dist(x, y, other.x, other.y);
-      if (d < snodeRadius + snodeRadius + 6) {
-        overlapping = true;
-      }
-    });
-    if (!overlapping) {
-      break;
-    }
-  }
-  const snode = {
-    x,
-    y,
-    r: snodeRadius,
-    state: stateEnum.default,
-  }
-  swarm.snodes[pubkey] = snode;
-}
-
 const init = async () => {
   const response = await httpPost(lokidUrl, 'json', { method: 'get_service_nodes' })
 
@@ -92,18 +110,17 @@ const init = async () => {
     if (!Object.keys(swarms).includes(swarmId.toString())) {
       createSwarm(swarmId);
     }
+    const swarm = swarms[swarmId];
     if (!Object.keys(swarms[swarmId]).includes(pubkey)) {
-      createSnode(swarms[swarmId], pubkey);
+      swarm.snodes[pubkey] = new Snode(swarm, pubkey);
     }
   });
 }
 
 const drawSnodes = swarm => {
   Object.keys(swarm.snodes).forEach(pubkey => {
-    const snode = swarm.snodes[pubkey];
-    const col = snodeCols[snode.state];
-    fill(col.r, col.g, col.b, 100);
-    ellipse(snode.x, snode.y, snodeRadius * 2, snodeRadius * 2);
+    swarm.snodes[pubkey].rollover(mouseX, mouseY);
+    swarm.snodes[pubkey].display();
   });
 }
 
@@ -114,7 +131,7 @@ const updateSnodes = () => {
 var setup = async () => {
   init();
   createCanvas(1000, 800);
-  frameRate(1);
+  frameRate(10);
 }
 
 var draw = () => {
