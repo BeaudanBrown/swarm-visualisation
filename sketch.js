@@ -1,25 +1,9 @@
 /*jshint esversion: 8 */
 
 let swarms = {};
-const swarmRadius = 80;
-const snodeRadius = 10;
-const propCol = {r: 106, g: 55, b: 255};
-const messageCol = {r: 106, g: 255, b: 142};
-const swarmCol = {r: 70, g: 70, b: 70};
-const snodeCol = {r: 135, g: 206, b: 250};
-const lokidUrl = 'http://13.236.173.190:38157/json_rpc';
-
-const stateEnum = {
-  default: 0,
-  clientMessage: 1,
-  snodeMessage: 2,
-};
-
-const snodeCols = {
-  [stateEnum.default]: snodeCol,
-  [stateEnum.clientMessage]: messageCol,
-  [stateEnum.snodeMessage]: propCol,
-};
+const baseUrl = '13.236.173.190';
+const lokidPort = '38157';
+const lokidUrl = `http://${baseUrl}:${lokidPort}/json_rpc`;
 
 const init = async () => {
   const response = await httpPost(lokidUrl, 'json', { method: 'get_service_nodes' })

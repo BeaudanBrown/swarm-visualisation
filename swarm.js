@@ -3,12 +3,13 @@ class Swarm {
     this.swarmId = swarmId;
     this.over = false;
     this.snodes = {};
-    this.r = swarmRadius;
+    this.r = 80;
+    this.col = {r: 70, g: 70, b: 70};
 
     while(true) {
       let overlapping = false;
-      this.x = random(swarmRadius, width - swarmRadius);
-      this.y = random(swarmRadius, height - swarmRadius);
+      this.x = random(this.r, width - this.r);
+      this.y = random(this.r, height - this.r);
 
       Object.keys(swarms).forEach(otherId => {
         const other = swarms[otherId];
@@ -30,7 +31,7 @@ class Swarm {
   }
 
   display() {
-    fill(swarmCol.r, swarmCol.g, swarmCol.b, 10);
+    fill(this.col.r, this.col.g, this.col.b, 10);
     ellipse(this.x, this.y, this.r * 2, this.r * 2);
     let alreadyText = false;
     Object.keys(this.snodes).forEach(pubkey => {
