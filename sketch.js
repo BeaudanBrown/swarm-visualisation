@@ -29,14 +29,14 @@ const init = async () => {
 const getEvents = async () => {
   const response = await httpGet(eventUrl, 'json')
   response.events.forEach(event => {
-    const { swarmId, eventType, snodeId, otherId } = event;
-    print(`Got ${eventType} event`);
-    if (!validEvents.includes(eventType)) return;
-    const swarm = swarms[swarmId];
+    const { swarm_id, event_type, snode_id, other_id } = event;
+    print(`Got ${event_type} event`);
+    if (!validEvents.includes(event_type)) return;
+    const swarm = swarms[swarm_id];
     if (!swarm) return;
-    switch (eventType) {
+    switch (event_type) {
       case "clientMessage":
-        const snode = swarm.snodes[snodeId];
+        const snode = swarm.snodes[snode_id];
         if (!snode) return;
         snode.gotClientMessage();
         break;
