@@ -6,7 +6,7 @@ const stateEnum = {
 
 const snodeCols = {
   [stateEnum.default]: {r: 135, g: 206, b: 250},
-  [stateEnum.clientMessage]: {r: 106, g: 255, b: 142},
+  [stateEnum.clientMessage]: {r: 0, g: 255, b: 0},
   [stateEnum.snodeMessage]: {r: 106, g: 55, b: 255},
 };
 
@@ -17,6 +17,8 @@ class Snode {
     this.pubkey = pubkey;
     this.state = stateEnum.default;
     this.over = false;
+    this.events = [];
+    this.resetTimer = null;
 
     const swarmX = swarm.x;
     const swarmY = swarm.y;
@@ -49,10 +51,18 @@ class Snode {
     this.over = d < this.r;
   }
 
+  gotClientMessage() {
+    clearTimeout(this.resetTimer);
+    this.state = stateEnum.clientMessage;
+    this.resetTimer = setTimeout(() => {
+      this.state = stateEnum.default;
+    }, 1000)
+  }
+
   // Display the Snode
   display() {
     const col = snodeCols[this.state];
-    fill(col.r, col.g, col.b, 100);
+    fill(col.r, col.g, col.b, 255);
     ellipse(this.x, this.y, this.diameter, this.diameter);
     if (this.over) {
       fill(0);

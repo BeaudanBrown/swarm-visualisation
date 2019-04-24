@@ -2,8 +2,11 @@
 
 let swarms = {};
 const baseUrl = '13.236.173.190';
-const lokidPort = '38157';
-const lokidUrl = `http://${baseUrl}:${lokidPort}/json_rpc`;
+const port = '38157';
+const lokidUrl = `http://${baseUrl}:${port}/json_rpc`;
+const eventUrl = `http://${baseUrl}:${port}/get_events`;
+
+const validEvents = ["clientMessage"];
 
 const init = async () => {
   const response = await httpPost(lokidUrl, 'json', { method: 'get_service_nodes' })
@@ -20,12 +23,34 @@ const init = async () => {
       swarm.snodes[pubkey] = new Snode(swarm, pubkey);
     }
   });
+  await getEvents();
 }
 
-var setup = async () => {
-  init();
+const getEvents = async () => {
+  const response = await httpGet(eventUrl, 'json')
+  response.events.forEach(event => {
+    const { swarmId, eventType, snodeId, otherId } = event;
+    print(`Got ${eventType} event`);
+    if (!validEvents.includes(eventType)) return;
+    const swarm = swarms[swarmId];
+    if (!swarm) return;
+    switch (eventType) {
+      case "clientMessage":
+        const snode = swarm.snodes[snodeId];
+        if (!snode) return;
+        snode.gotClientMessage();
+        break;
+      default:
+        break;
+    }
+  });
+  getEvents();
+}
+
+var setup = () => {
   createCanvas(1000, 800);
   frameRate(10);
+  init();
 }
 
 var draw = () => {
