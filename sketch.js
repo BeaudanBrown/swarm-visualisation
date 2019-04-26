@@ -44,12 +44,14 @@ const getEvents = async () => {
     print(event_type)
     snode.setState(event_type);
   });
-  getEvents();
+  setTimeout(() => {
+    getEvents();
+  }, 200)
 }
 
 var setup = () => {
   createCanvas(1000, 800);
-  frameRate(10);
+  frameRate(30);
   init();
 }
 

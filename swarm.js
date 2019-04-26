@@ -24,10 +24,48 @@ class Swarm {
     }
   }
 
+  getSnodeLocation() {
+    let pos = {
+      x: 0,
+      y: 0,
+    };
+
+    while(true) {
+      let overlapping = false;
+      const a = random() * 2 * PI;
+      const r = this.r * Math.sqrt(random()) - snodeRadius * 2;
+      pos.x = r * Math.cos(a) + this.x;
+      pos.y = r * Math.sin(a) + this.y;
+
+      Object.keys(this.snodes).forEach(otherAddress => {
+        const other = this.snodes[otherAddress];
+        const d = dist(pos.x, pos.y, other.x, other.y);
+        if (d < snodeRadius + snodeRadius + 6) {
+          overlapping = true;
+        }
+      });
+      if (!overlapping) {
+        break;
+      }
+    }
+    return pos;
+  }
+
   // Check if mouse is over the swarm
   rollover(px, py) {
     let d = dist(px, py, this.x, this.y);
     this.over = d < this.r;
+  }
+
+  migrate(snodeAddress, newSwarmId) {
+    const snode = this.snodes[snodeAddress];
+    const newSwarm = swarms[newSwarmId];
+    if (!snode || !newSwarm) return;
+    const newPos = newSwarm.getSnodeLocation();
+    snode.desiredX = newPos.x;
+    snode.desiredY = newPos.y;
+    delete this.snodes[snodeAddress];
+    newSwarm.snodes[snodeAddress] = snode;
   }
 
   display() {
