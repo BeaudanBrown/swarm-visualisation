@@ -5,6 +5,7 @@ const stateEnum = {
   clientMessage: 1,
   snodeMessage: 2,
   clientRetrieve: 3,
+  changedSwarm: 4,
 };
 
 const snodeCols = {
@@ -23,9 +24,6 @@ class Snode {
     this.over = false;
     this.resetTimer = null;
 
-    const {x, y} = swarm.getSnodeLocation();
-    this.x = x;
-    this.y = y;
     this.desiredX = this.x;
     this.desiredY = this.y;
   }
@@ -44,9 +42,16 @@ class Snode {
     }, 1000)
   }
 
+  setPosition(pos) {
+    this.x = pos.x;
+    this.desiredX = pos.x;
+    this.y = pos.y;
+    this.desiredY = pos.y;
+  }
+
   lerpPosition() {
-    this.x = lerp(this.x, this.desiredX, 0.05);
-    this.y = lerp(this.y, this.desiredY, 0.05);
+    this.x = lerp(this.x, this.desiredX, 0.1);
+    this.y = lerp(this.y, this.desiredY, 0.1);
   }
 
   // Display the Snode

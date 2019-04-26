@@ -1,10 +1,13 @@
+const swarmRadius = 60;
+
 class Swarm {
   constructor(swarmId) {
     this.swarmId = swarmId;
     this.over = false;
     this.snodes = {};
-    this.r = 80;
+    this.r = swarmRadius;
     this.col = {r: 70, g: 70, b: 70};
+    this.angleFuzz = random() * 2 * PI;
 
     while(true) {
       let overlapping = false;
@@ -24,30 +27,21 @@ class Swarm {
     }
   }
 
-  getSnodeLocation() {
+  getSnodeLocation(address) {
     let pos = {
       x: 0,
       y: 0,
     };
 
-    while(true) {
-      let overlapping = false;
-      const a = random() * 2 * PI;
-      const r = this.r * Math.sqrt(random()) - snodeRadius * 2;
-      pos.x = r * Math.cos(a) + this.x;
-      pos.y = r * Math.sin(a) + this.y;
+    const idx = Object.keys(this.snodes).indexOf(address);
+    const numSnodes = Object.keys(this.snodes).length;
+    if (idx === -1) return pos;
 
-      Object.keys(this.snodes).forEach(otherAddress => {
-        const other = this.snodes[otherAddress];
-        const d = dist(pos.x, pos.y, other.x, other.y);
-        if (d < snodeRadius + snodeRadius + 6) {
-          overlapping = true;
-        }
-      });
-      if (!overlapping) {
-        break;
-      }
-    }
+    const r = this.r * 0.15 * numSnodes;
+    const a = this.angleFuzz + (idx + 1) / numSnodes * 2 * PI;
+    pos.x = r * Math.cos(a) + this.x;
+    pos.y = r * Math.sin(a) + this.y;
+
     return pos;
   }
 
@@ -61,11 +55,16 @@ class Swarm {
     const snode = this.snodes[snodeAddress];
     const newSwarm = swarms[newSwarmId];
     if (!snode || !newSwarm) return;
-    const newPos = newSwarm.getSnodeLocation();
-    snode.desiredX = newPos.x;
-    snode.desiredY = newPos.y;
-    delete this.snodes[snodeAddress];
     newSwarm.snodes[snodeAddress] = snode;
+    delete this.snodes[snodeAddress];
+  }
+
+  alignSnodes() {
+    Object.keys(this.snodes).forEach(snodeAddress => {
+      const newPos = this.getSnodeLocation(snodeAddress);
+      this.snodes[snodeAddress].desiredX = newPos.x;
+      this.snodes[snodeAddress].desiredY = newPos.y;
+    });
   }
 
   display() {

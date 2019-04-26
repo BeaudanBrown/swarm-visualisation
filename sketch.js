@@ -28,11 +28,28 @@ const init = async () => {
       swarm.snodes[address] = new Snode(swarm, address);
     }
   });
+  const numSwarms = Object.keys(swarms).length;
+  Object.keys(swarms).forEach(swarmId => {
+    const swarm = swarms[swarmId];
+
+    const idx = Object.keys(swarms).indexOf(swarmId);
+
+    const r = swarmRadius * 3;
+    const a = (idx + 1) / numSwarms * 2 * PI;
+    swarm.x = r * Math.cos(a) + width / 2;
+    swarm.y = r * Math.sin(a) + height / 2;
+
+    Object.keys(swarm.snodes).forEach(snodeAddress => {
+      const pos = swarm.getSnodeLocation(snodeAddress);
+      swarm.snodes[snodeAddress].setPosition(pos);
+    });
+  });
   await getEvents();
 }
 
 const getEvents = async () => {
   const response = await httpGet(eventUrl, 'json')
+  let needAlign = false;
   response.events.forEach(event => {
     const { swarm_id, snode_id, event_type, other_id } = event;
     print(`Got ${event_type} event from ${snode_id}`);
@@ -41,9 +58,18 @@ const getEvents = async () => {
     if (!swarm) return;
     const snode = swarm.snodes[snode_id];
     if (!snode) return;
-    print(event_type)
+    if (event_type === 'changedSwarm') {
+      swarm.migrate(snode_id, other_id);
+      needAlign = true;
+      return;
+    }
     snode.setState(event_type);
   });
+  if (needAlign) {
+    Object.keys(swarms).forEach(swarmId => {
+      swarms[swarmId].alignSnodes();
+    });
+  }
   setTimeout(() => {
     getEvents();
   }, 200)
