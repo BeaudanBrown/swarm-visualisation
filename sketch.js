@@ -6,7 +6,7 @@ const port = '38157';
 const lokidUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
 
-const validEvents = ["clientMessage"];
+const validEvents = Object.keys(stateEnum);
 
 const init = async () => {
   const response = await httpPost(lokidUrl, 'json', { method: 'get_service_nodes' })
@@ -39,15 +39,10 @@ const getEvents = async () => {
     if (!validEvents.includes(event_type)) return;
     const swarm = swarms[swarm_id];
     if (!swarm) return;
-    switch (event_type) {
-      case "clientMessage":
-        const snode = swarm.snodes[snode_id];
-        if (!snode) return;
-        snode.gotClientMessage();
-        break;
-      default:
-        break;
-    }
+    const snode = swarm.snodes[snode_id];
+    if (!snode) return;
+    print(event_type)
+    snode.setState(event_type);
   });
   getEvents();
 }

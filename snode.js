@@ -51,9 +51,9 @@ class Snode {
     this.over = d < this.r;
   }
 
-  gotClientMessage() {
+  setState(newState) {
     clearTimeout(this.resetTimer);
-    this.state = stateEnum.clientMessage;
+    this.state = stateEnum[newState];
     this.resetTimer = setTimeout(() => {
       this.state = stateEnum.default;
     }, 1000)
