@@ -34,9 +34,9 @@ class Swarm {
     fill(this.col.r, this.col.g, this.col.b, 10);
     ellipse(this.x, this.y, this.r * 2, this.r * 2);
     let alreadyText = false;
-    Object.keys(this.snodes).forEach(pubkey => {
-      this.snodes[pubkey].rollover(mouseX, mouseY);
-      this.snodes[pubkey].display();
+    Object.keys(this.snodes).forEach(address => {
+      this.snodes[address].rollover(mouseX, mouseY);
+      this.snodes[address].display();
     });
     if (this.over) {
       fill(0);

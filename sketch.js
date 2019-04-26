@@ -13,14 +13,19 @@ const init = async () => {
 
   const snodeList = JSON.parse(response.result.as_json);
   snodeList.forEach(snodeData => {
-    const pubkey = snodeData.pubkey;
+    const addressBuf = Multibase.Buffer.from(snodeData.pubkey, 'hex');
+    const address = Multibase.encode(
+      'base32z',
+      addressBuf
+    ).toString().substr(1) + '.snode';
+
     const swarmId = snodeData.info.swarm_id;
     if (!Object.keys(swarms).includes(swarmId.toString())) {
       swarms[swarmId] = new Swarm(swarmId);
     }
     const swarm = swarms[swarmId];
-    if (!Object.keys(swarms[swarmId]).includes(pubkey)) {
-      swarm.snodes[pubkey] = new Snode(swarm, pubkey);
+    if (!Object.keys(swarms[swarmId]).includes(address)) {
+      swarm.snodes[address] = new Snode(swarm, address);
     }
   });
   await getEvents();
@@ -29,8 +34,8 @@ const init = async () => {
 const getEvents = async () => {
   const response = await httpGet(eventUrl, 'json')
   response.events.forEach(event => {
-    const { swarm_id, event_type, snode_id, other_id } = event;
-    print(`Got ${event_type} event`);
+    const { swarm_id, snode_id, event_type, other_id } = event;
+    print(`Got ${event_type} event from ${snode_id}`);
     if (!validEvents.includes(event_type)) return;
     const swarm = swarms[swarm_id];
     if (!swarm) return;

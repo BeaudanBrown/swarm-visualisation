@@ -11,10 +11,10 @@ const snodeCols = {
 };
 
 class Snode {
-  constructor(swarm, pubkey) {
+  constructor(swarm, address) {
     this.r = 10;
     this.diameter = 2 * this.r;
-    this.pubkey = pubkey;
+    this.address = address;
     this.state = stateEnum.default;
     this.over = false;
     this.events = [];
@@ -32,8 +32,8 @@ class Snode {
       this.x = r * Math.cos(a) + swarmX;
       this.y = r * Math.sin(a) + swarmY;
 
-      Object.keys(snodes).forEach(pubkey => {
-        const other = snodes[pubkey];
+      Object.keys(snodes).forEach(otherAddress => {
+        const other = snodes[otherAddress];
         const d = dist(this.x, this.y, other.x, other.y);
         if (d < this.r + this.r + 6) {
           overlapping = true;
@@ -67,7 +67,7 @@ class Snode {
     if (this.over) {
       fill(0);
       textAlign(CENTER);
-      text(this.pubkey, this.x, this.y + this.r + 20);
+      text(this.address, this.x, this.y + this.r + 20);
     }
   }
 }
