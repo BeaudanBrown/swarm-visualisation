@@ -4,9 +4,9 @@ class Swarm {
   constructor(swarmId) {
     this.swarmId = swarmId;
     this.over = false;
-    this.snodes = {};
+    this.snodes = [];
     this.r = swarmRadius;
-    this.col = {r: 70, g: 70, b: 70};
+    this.col = {r: 255, g: 255, b: 255};
     this.angleFuzz = random() * 2 * PI;
     this.x = 0;
     this.y = 0;
@@ -18,9 +18,9 @@ class Swarm {
       y: 0,
     };
 
-    const idx = Object.keys(this.snodes).indexOf(address);
-    const numSnodes = Object.keys(this.snodes).length;
+    const idx = this.snodes.findIndex(snode => snode.address === address);
     if (idx === -1) return pos;
+    const numSnodes = this.snodes.length;
 
     const r = this.r * 0.15 * numSnodes;
     const a = this.angleFuzz + (idx + 1) / numSnodes * 2 * PI;
@@ -37,29 +37,25 @@ class Swarm {
   }
 
   migrate(snodeAddress, newSwarmId) {
-    const snode = this.snodes[snodeAddress];
-    const newSwarm = swarms[newSwarmId];
+    const snode = this.snodes.find(snode => snode.address === snodeAddress);
+    const newSwarm = swarms.find(swarm => swarm.swarmId === newSwarmId);
     if (!snode || !newSwarm) return;
-    newSwarm.snodes[snodeAddress] = snode;
-    delete this.snodes[snodeAddress];
+    newSwarm.snodes.push(snode);
+    const idx = this.snodes.findIndex(snode => snode.address === snodeAddress);
+    this.snodes.splice(idx, 1);
   }
 
   alignSnodes() {
-    Object.keys(this.snodes).forEach(snodeAddress => {
-      const newPos = this.getSnodeLocation(snodeAddress);
-      this.snodes[snodeAddress].desiredX = newPos.x;
-      this.snodes[snodeAddress].desiredY = newPos.y;
+    this.snodes.forEach(snode => {
+      const newPos = this.getSnodeLocation(snode.address);
+      snode.desiredX = newPos.x;
+      snode.desiredY = newPos.y;
     });
   }
 
   display() {
     fill(this.col.r, this.col.g, this.col.b, 10);
     ellipse(this.x, this.y, this.r * 2, this.r * 2);
-    let alreadyText = false;
-    Object.keys(this.snodes).forEach(address => {
-      this.snodes[address].rollover(mouseX, mouseY);
-      this.snodes[address].display();
-    });
     if (this.over) {
       fill(0);
       textAlign(CENTER);

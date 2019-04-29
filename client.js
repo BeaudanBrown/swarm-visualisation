@@ -2,14 +2,16 @@ const clientRadius = 20;
 
 const clientStateEnum = {
   default: 0,
-  sendMessage: 1,
-  retrieveMessage: 2,
+  clientSend: 1,
+  clientRetrieve: 2,
+  clientP2pSend: 3,
 };
 
 const clientCols = {
   [clientStateEnum.default]: {r: 235, g: 206, b: 50},
-  [clientStateEnum.sendMessage]: snodeCols[snodeStateEnum.clientMessage],
-  [clientStateEnum.retrieveMessage]: snodeCols[snodeStateEnum.clientRetrieve],
+  [clientStateEnum.clientSend]: snodeCols[snodeStateEnum.snodeStore],
+  [clientStateEnum.clientP2pSend]: {r: 135, g: 206, b: 150},
+  [clientStateEnum.clientRetrieve]: snodeCols[snodeStateEnum.snodeRetrieve],
 };
 
 class Client {
@@ -18,8 +20,10 @@ class Client {
     this.over = false;
     this.r = clientRadius;
     this.state = clientStateEnum.default;
+    this.destinations = [];
     this.x = 0;
     this.y = 0;
+    this.statePromise = Promise.resolve();
   }
 
   // Check if mouse is over the swarm
@@ -35,9 +39,31 @@ class Client {
     this.desiredY = pos.y;
   }
 
+  setState(newState, destination=null) {
+    if (newState === this.state) {
+      if (destination) {
+        this.destinations.push(destination)
+      }
+      return;
+    }
+    this.statePromise = this.statePromise.then(async () => {
+      this.state = clientStateEnum[newState]
+      this.destinations = [destination];
+      await sleep(stateTimer / 2);
+      this.state = clientStateEnum.default;
+      this.destinations = [];
+    });
+  }
+
   lerpPosition() {
     this.x = lerp(this.x, this.desiredX, 0.1);
     this.y = lerp(this.y, this.desiredY, 0.1);
+  }
+
+  displayDestinations() {
+    const destination = this.destinations[0];
+    if (!destination) return;
+    line(this.x, this.y, destination.x, destination.y);
   }
 
   display() {
@@ -45,7 +71,7 @@ class Client {
       this.lerpPosition();
     }
     const col = clientCols[this.state];
-    fill(col.r, col.g, col.b, 100);
+    fill(col.r, col.g, col.b, 255);
     ellipse(this.x, this.y, this.r * 2, this.r * 2);
     if (this.over) {
       fill(0);

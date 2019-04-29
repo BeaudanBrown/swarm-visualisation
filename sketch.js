@@ -1,11 +1,12 @@
 /*jshint esversion: 8 */
 
-let swarms = {};
-let clients = {};
+let swarms = [];
+let clients = [];
 const baseUrl = '13.236.173.190';
 const port = '38157';
 const lokidUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
+const stateTimer = 1500;
 
 const init = async () => {
   const response = await httpPost(lokidUrl, 'json', { method: 'get_service_nodes' })
@@ -18,29 +19,25 @@ const init = async () => {
       addressBuf
     ).toString().substr(1) + '.snode';
 
-    const swarmId = snodeData.info.swarm_id;
-    if (!Object.keys(swarms).includes(swarmId.toString())) {
-      swarms[swarmId] = new Swarm(swarmId);
+    const swarmId = snodeData.info.swarm_id.toString();
+    if (!swarms.map(swarm => swarm.swarmId).includes(swarmId)) {
+      swarms.push(new Swarm(swarmId));
     }
-    const swarm = swarms[swarmId];
-    if (!Object.keys(swarms[swarmId]).includes(address)) {
-      swarm.snodes[address] = new Snode(swarm, address);
+    const swarm = swarms.find(swarm => swarm.swarmId === swarmId);
+    if (!swarm.snodes.find(snode => snode.address === address)) {
+      swarm.snodes.push(new Snode(swarm, address));
     }
   });
-  const numSwarms = Object.keys(swarms).length;
-  Object.keys(swarms).forEach(swarmId => {
-    const swarm = swarms[swarmId];
-
-    const idx = Object.keys(swarms).indexOf(swarmId);
-
+  const numSwarms = swarms.length;
+  swarms.forEach((swarm, idx) => {
     const r = swarmRadius * 3;
     const a = (idx + 1) / numSwarms * 2 * PI;
     swarm.x = r * Math.cos(a) + width / 2;
     swarm.y = r * Math.sin(a) + height / 2;
 
-    Object.keys(swarm.snodes).forEach(snodeAddress => {
-      const pos = swarm.getSnodeLocation(snodeAddress);
-      swarm.snodes[snodeAddress].setPosition(pos);
+    swarm.snodes.forEach(snode => {
+      const pos = swarm.getSnodeLocation(snode.address);
+      snode.setPosition(pos);
     });
   });
   await getEvents();
@@ -51,10 +48,10 @@ const getClientPos = (clientId) => {
     x: -1,
     y: -1,
   }
-  const idx = Object.keys(clients).indexOf(clientId);
-  const numClients = Object.keys(clients).length;
-  const d = width / (numClients + 1);
+  const idx = clients.findIndex(client => client.clientId === clientId);
   if (idx === -1) return pos;
+  const numClients = clients.length;
+  const d = width / (numClients + 1);
   pos.y = height - clientRadius * 2;
   pos.x = (idx + 1) * d;
   return pos;
@@ -64,53 +61,99 @@ const getEvents = async () => {
   const response = await httpGet(eventUrl, 'json')
   let needAlign = false;
   response.events.forEach(event => {
-    const { swarm_id, snode_id, event_type, other_id } = event;
-    print(`Got ${event_type} event from ${snode_id}`);
+    const { swarm_id, this_id, event_type, other_id } = event;
+    print(`Got ${event_type} event from ${this_id}`);
     switch (event_type) {
-      case 'changedSwarm':
-        {
-          const swarm = swarms[swarm_id];
-          swarm.migrate(snode_id, other_id);
-          needAlign = true;
-          break;
-        }
       case 'clientStart':
         {
-          if (Object.keys(clients).includes(snode_id)) return;
-          clients[snode_id] = new Client(snode_id);
-          const newPos = getClientPos(snode_id);
-          clients[snode_id].setPosition(newPos);
+          if (clients.map(client => client.clientId).includes(this_id)) return;
+          clients.push(new Client(this_id));
+          const newPos = getClientPos(this_id);
+          clients[clients.length - 1].setPosition(newPos);
 
-          Object.keys(clients).forEach(clientId => {
-            const client = clients[clientId];
-            const pos = getClientPos(clientId);
+          clients.forEach(client => {
+            const pos = getClientPos(client.clientId);
             client.desiredX = pos.x;
             client.desiredY = pos.y;
           })
           break;
         }
-      case 'clientMessage':
+      case 'clientSend':
         {
-          const swarm = swarms[swarm_id];
-          swarm.migrate(snode_id, other_id);
+          if (!clients.map(client => client.clientId).includes(this_id)) return;
+          const client = clients.find(client => client.clientId === this_id);
+          let destination;
+          swarms.forEach(swarm => {
+            const possibleDestination = swarm.snodes.find(snode => snode.address === other_id);
+            if (possibleDestination) {
+              destination = possibleDestination;
+            }
+          });
+          client.setState('clientSend', destination);
+          break;
+        }
+      case 'clientP2pSend':
+        {
+          if (!clients.map(client => client.clientId).includes(this_id)) return;
+          const client = clients.find(client => client.clientId === this_id);
+          client.setState('clientP2pSend');
+          break;
+        }
+      case 'clientRetrieve':
+        {
+          if (!clients.map(client => client.clientId).includes(this_id)) return;
+          const client = clients.find(client => client.clientId === this_id);
+          let destination;
+          swarms.forEach(swarm => {
+            const possibleDestination = swarm.snodes.find(snode => snode.address === other_id);
+            if (possibleDestination) {
+              destination = possibleDestination;
+            }
+          });
+          client.setState('clientRetrieve', destination);
+          break;
+        }
+      case 'snodeStore':
+        {
+          const swarm = swarms.find(swarm => swarm.swarmId === swarm_id);
+          if (!swarm) return;
+          const snode = swarm.snodes.find(snode => snode.address === this_id);
+          if (!snode) return;
+          snode.setState('snodeStore');
+          break;
+        }
+      case 'snodeRetrieve':
+        {
+          const swarm = swarms.find(swarm => swarm.swarmId === swarm_id);
+          if (!swarm) return;
+          const snode = swarm.snodes.find(snode => snode.address === this_id);
+          if (!snode) return;
+          snode.setState('snodeRetrieve');
+          break;
+        }
+      case 'snodePush':
+        {
+          const swarm = swarms.find(swarm => swarm.swarmId === swarm_id);
+          if (!swarm) return;
+          const snode = swarm.snodes.find(snode => snode.address === this_id);
+          if (!snode) return;
+          snode.setState('snodePush');
+          break;
+        }
+      case 'changedSwarm':
+        {
+          const swarm = swarms.find(swarm => swarm.swarmId === swarm_id);
+          swarm.migrate(this_id, other_id);
           needAlign = true;
           break;
         }
       default:
-        {
-          const swarm = swarms[swarm_id];
-          if (!swarm) return;
-          const snode = swarm.snodes[snode_id];
-          if (!snode) return;
-          snode.setState(event_type);
-          break;
-        }
+        print('Unknown event reported');
+        return;
     }
   });
   if (needAlign) {
-    Object.keys(swarms).forEach(swarmId => {
-      swarms[swarmId].alignSnodes();
-    });
+    swarms.forEach(swarm => swarm.alignSnodes());
   }
   setTimeout(() => {
     getEvents();
@@ -124,15 +167,31 @@ var setup = () => {
 }
 
 var draw = () => {
-  clear()
-  // Draw all the clients
-  Object.keys(clients).forEach(clientId => {
-    clients[clientId].rollover(mouseX, mouseY);
-    clients[clientId].display();
-  })
+  clear();
+  background(100);
   // Draw all the swarms
-  Object.keys(swarms).forEach(swarmId => {
-    swarms[swarmId].rollover(mouseX, mouseY);
-    swarms[swarmId].display();
+  swarms.forEach(swarm => {
+    swarm.rollover(mouseX, mouseY);
+    swarm.display();
+  });
+  // Draw all the lines
+  clients.forEach(client => {
+    client.displayDestinations();
+  });
+  swarms.forEach(swarm => {
+    swarm.snodes.forEach(snode => {
+      snode.displayDestinations();
+      snode.rollover(mouseX, mouseY);
+      snode.display();
+    })
   })
+  // Draw all the clients
+  clients.forEach(client => {
+    client.rollover(mouseX, mouseY);
+    client.display();
+  });
+}
+
+const sleep = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

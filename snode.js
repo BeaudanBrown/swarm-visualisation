@@ -2,17 +2,17 @@ const snodeRadius = 10;
 
 const snodeStateEnum = {
   default: 0,
-  clientMessage: 1,
-  snodeMessage: 2,
-  clientRetrieve: 3,
+  snodeStore: 1,
+  snodePush: 2,
+  snodeRetrieve: 3,
   changedSwarm: 4,
 };
 
 const snodeCols = {
   [snodeStateEnum.default]: {r: 135, g: 206, b: 250},
-  [snodeStateEnum.clientMessage]: {r: 0, g: 255, b: 0},
-  [snodeStateEnum.clientRetrieve]: {r: 255, g: 255, b: 0},
-  [snodeStateEnum.snodeMessage]: {r: 106, g: 55, b: 255},
+  [snodeStateEnum.snodeStore]: {r: 0, g: 255, b: 0},
+  [snodeStateEnum.snodeRetrieve]: {r: 255, g: 255, b: 0},
+  [snodeStateEnum.snodePush]: {r: 106, g: 55, b: 255},
 };
 
 class Snode {
@@ -25,6 +25,8 @@ class Snode {
 
     this.desiredX = this.x;
     this.desiredY = this.y;
+    this.destinations = [];
+    this.statePromise = Promise.resolve();
   }
 
   // Check if mouse is over the snode
@@ -33,12 +35,14 @@ class Snode {
     this.over = d < this.r;
   }
 
-  setState(newState) {
-    clearTimeout(this.resetTimer);
-    this.state = snodeStateEnum[newState];
-    this.resetTimer = setTimeout(() => {
+  setState(newState, destination=null) {
+    this.statePromise = this.statePromise.then(async () => {
+      this.state = snodeStateEnum[newState]
+      this.destinations.push(destination);
+      await sleep(stateTimer);
       this.state = snodeStateEnum.default;
-    }, 1000)
+      this.destinations.pop();
+    });
   }
 
   setPosition(pos) {
@@ -51,6 +55,12 @@ class Snode {
   lerpPosition() {
     this.x = lerp(this.x, this.desiredX, 0.1);
     this.y = lerp(this.y, this.desiredY, 0.1);
+  }
+
+  displayDestinations() {
+    const destination = this.destinations[0];
+    if (!destination) return;
+    line(this.x, this.y, destination.x, destination.y);
   }
 
   // Display the Snode
