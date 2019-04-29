@@ -8,23 +8,8 @@ class Swarm {
     this.r = swarmRadius;
     this.col = {r: 70, g: 70, b: 70};
     this.angleFuzz = random() * 2 * PI;
-
-    while(true) {
-      let overlapping = false;
-      this.x = random(this.r, width - this.r);
-      this.y = random(this.r, height - this.r);
-
-      Object.keys(swarms).forEach(otherId => {
-        const other = swarms[otherId];
-        const d = dist(this.x, this.y, other.x, other.y);
-        if (d < this.r + other.r + 6) {
-          overlapping = true;
-        }
-      });
-      if (!overlapping) {
-        break;
-      }
-    }
+    this.x = 0;
+    this.y = 0;
   }
 
   getSnodeLocation(address) {

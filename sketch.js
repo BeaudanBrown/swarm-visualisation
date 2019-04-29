@@ -1,12 +1,11 @@
 /*jshint esversion: 8 */
 
 let swarms = {};
+let clients = {};
 const baseUrl = '13.236.173.190';
 const port = '38157';
 const lokidUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
-
-const validEvents = Object.keys(stateEnum);
 
 const init = async () => {
   const response = await httpPost(lokidUrl, 'json', { method: 'get_service_nodes' })
@@ -47,23 +46,66 @@ const init = async () => {
   await getEvents();
 }
 
+const getClientPos = (clientId) => {
+  let pos = {
+    x: -1,
+    y: -1,
+  }
+  const idx = Object.keys(clients).indexOf(clientId);
+  const numClients = Object.keys(clients).length;
+  const d = width / (numClients + 1);
+  if (idx === -1) return pos;
+  pos.y = height - clientRadius * 2;
+  pos.x = (idx + 1) * d;
+  return pos;
+}
+
 const getEvents = async () => {
   const response = await httpGet(eventUrl, 'json')
   let needAlign = false;
   response.events.forEach(event => {
     const { swarm_id, snode_id, event_type, other_id } = event;
     print(`Got ${event_type} event from ${snode_id}`);
-    if (!validEvents.includes(event_type)) return;
-    const swarm = swarms[swarm_id];
-    if (!swarm) return;
-    const snode = swarm.snodes[snode_id];
-    if (!snode) return;
-    if (event_type === 'changedSwarm') {
-      swarm.migrate(snode_id, other_id);
-      needAlign = true;
-      return;
+    switch (event_type) {
+      case 'changedSwarm':
+        {
+          const swarm = swarms[swarm_id];
+          swarm.migrate(snode_id, other_id);
+          needAlign = true;
+          break;
+        }
+      case 'clientStart':
+        {
+          if (Object.keys(clients).includes(snode_id)) return;
+          clients[snode_id] = new Client(snode_id);
+          const newPos = getClientPos(snode_id);
+          clients[snode_id].setPosition(newPos);
+
+          Object.keys(clients).forEach(clientId => {
+            const client = clients[clientId];
+            const pos = getClientPos(clientId);
+            client.desiredX = pos.x;
+            client.desiredY = pos.y;
+          })
+          break;
+        }
+      case 'clientMessage':
+        {
+          const swarm = swarms[swarm_id];
+          swarm.migrate(snode_id, other_id);
+          needAlign = true;
+          break;
+        }
+      default:
+        {
+          const swarm = swarms[swarm_id];
+          if (!swarm) return;
+          const snode = swarm.snodes[snode_id];
+          if (!snode) return;
+          snode.setState(event_type);
+          break;
+        }
     }
-    snode.setState(event_type);
   });
   if (needAlign) {
     Object.keys(swarms).forEach(swarmId => {
@@ -76,13 +118,18 @@ const getEvents = async () => {
 }
 
 var setup = () => {
-  createCanvas(1000, 800);
+  createCanvas(1000, 1000);
   frameRate(30);
   init();
 }
 
 var draw = () => {
   clear()
+  // Draw all the clients
+  Object.keys(clients).forEach(clientId => {
+    clients[clientId].rollover(mouseX, mouseY);
+    clients[clientId].display();
+  })
   // Draw all the swarms
   Object.keys(swarms).forEach(swarmId => {
     swarms[swarmId].rollover(mouseX, mouseY);

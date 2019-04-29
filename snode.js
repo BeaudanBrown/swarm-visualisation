@@ -1,6 +1,6 @@
 const snodeRadius = 10;
 
-const stateEnum = {
+const snodeStateEnum = {
   default: 0,
   clientMessage: 1,
   snodeMessage: 2,
@@ -9,18 +9,17 @@ const stateEnum = {
 };
 
 const snodeCols = {
-  [stateEnum.default]: {r: 135, g: 206, b: 250},
-  [stateEnum.clientMessage]: {r: 0, g: 255, b: 0},
-  [stateEnum.clientRetrieve]: {r: 255, g: 255, b: 0},
-  [stateEnum.snodeMessage]: {r: 106, g: 55, b: 255},
+  [snodeStateEnum.default]: {r: 135, g: 206, b: 250},
+  [snodeStateEnum.clientMessage]: {r: 0, g: 255, b: 0},
+  [snodeStateEnum.clientRetrieve]: {r: 255, g: 255, b: 0},
+  [snodeStateEnum.snodeMessage]: {r: 106, g: 55, b: 255},
 };
 
 class Snode {
   constructor(swarm, address) {
     this.r = snodeRadius;
-    this.diameter = 2 * this.r;
     this.address = address;
-    this.state = stateEnum.default;
+    this.state = snodeStateEnum.default;
     this.over = false;
     this.resetTimer = null;
 
@@ -36,9 +35,9 @@ class Snode {
 
   setState(newState) {
     clearTimeout(this.resetTimer);
-    this.state = stateEnum[newState];
+    this.state = snodeStateEnum[newState];
     this.resetTimer = setTimeout(() => {
-      this.state = stateEnum.default;
+      this.state = snodeStateEnum.default;
     }, 1000)
   }
 
@@ -61,7 +60,7 @@ class Snode {
       this.lerpPosition();
     }
     fill(col.r, col.g, col.b, 255);
-    ellipse(this.x, this.y, this.diameter, this.diameter);
+    ellipse(this.x, this.y, this.r * 2, this.r * 2);
     if (this.over) {
       fill(0);
       textAlign(CENTER);
