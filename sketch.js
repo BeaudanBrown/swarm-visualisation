@@ -2,11 +2,14 @@
 
 let swarms = [];
 let clients = [];
+let events = [];
+let eventLoop = Promise.resolve();
+let arrows = [];
 const baseUrl = '13.236.173.190';
 const port = '38157';
 const lokidUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
-const stateTimer = 1500;
+const stateTimer = 500;
 
 const init = async () => {
   const response = await httpPost(lokidUrl, 'json', { method: 'get_service_nodes' })
@@ -52,9 +55,28 @@ const getClientPos = (clientId) => {
   if (idx === -1) return pos;
   const numClients = clients.length;
   const d = width / (numClients + 1);
-  pos.y = height - clientRadius * 2;
+  pos.y = height - clientRadius * 3;
   pos.x = (idx + 1) * d;
   return pos;
+}
+
+const addEvent = async (origin, originState, destination, destinationState) => {
+  origin.setState(originState);
+  if (destination) {
+    destination.setState(destinationState);
+    arrows.push({
+      x1: origin.x,
+      y1: origin.y,
+      x2: destination.x,
+      y2: destination.y,
+    });
+  }
+  await sleep(stateTimer);
+  origin.setState('default');
+  if (destination) {
+    destination.setState('default');
+  }
+  arrows = [];
 }
 
 const getEvents = async () => {
@@ -78,6 +100,14 @@ const getEvents = async () => {
           })
           break;
         }
+      case 'clientP2pSend':
+        {
+          if (!clients.map(client => client.clientId).includes(this_id)) return;
+          const client = clients.find(client => client.clientId === this_id);
+          const destination = clients.find(client => client.clientId === other_id);
+          eventLoop = eventLoop.then(async () => addEvent(client, 'clientP2pSend', destination, 'clientP2pSend'));
+          break;
+        }
       case 'clientSend':
         {
           if (!clients.map(client => client.clientId).includes(this_id)) return;
@@ -89,37 +119,7 @@ const getEvents = async () => {
               destination = possibleDestination;
             }
           });
-          client.setState('clientSend', destination);
-          break;
-        }
-      case 'clientP2pSend':
-        {
-          if (!clients.map(client => client.clientId).includes(this_id)) return;
-          const client = clients.find(client => client.clientId === this_id);
-          client.setState('clientP2pSend');
-          break;
-        }
-      case 'clientRetrieve':
-        {
-          if (!clients.map(client => client.clientId).includes(this_id)) return;
-          const client = clients.find(client => client.clientId === this_id);
-          let destination;
-          swarms.forEach(swarm => {
-            const possibleDestination = swarm.snodes.find(snode => snode.address === other_id);
-            if (possibleDestination) {
-              destination = possibleDestination;
-            }
-          });
-          client.setState('clientRetrieve', destination);
-          break;
-        }
-      case 'snodeStore':
-        {
-          const swarm = swarms.find(swarm => swarm.swarmId === swarm_id);
-          if (!swarm) return;
-          const snode = swarm.snodes.find(snode => snode.address === this_id);
-          if (!snode) return;
-          snode.setState('snodeStore');
+          eventLoop = eventLoop.then(async () => addEvent(client, 'clientSend', destination, 'snodeStore'));
           break;
         }
       case 'snodeRetrieve':
@@ -128,7 +128,9 @@ const getEvents = async () => {
           if (!swarm) return;
           const snode = swarm.snodes.find(snode => snode.address === this_id);
           if (!snode) return;
-          snode.setState('snodeRetrieve');
+          const destination = clients.find(client => client.clientId === other_id);
+
+          eventLoop = eventLoop.then(async () => addEvent(snode, 'snodeRetrieve', destination, 'clientRetrieve'));
           break;
         }
       case 'snodePush':
@@ -137,7 +139,9 @@ const getEvents = async () => {
           if (!swarm) return;
           const snode = swarm.snodes.find(snode => snode.address === this_id);
           if (!snode) return;
-          snode.setState('snodePush');
+          const destination = swarm.snodes.find(snode => snode.address === other_id);
+
+          eventLoop = eventLoop.then(async () => addEvent(snode, 'snodePush', destination, 'snodePush'));
           break;
         }
       case 'changedSwarm':
@@ -155,9 +159,8 @@ const getEvents = async () => {
   if (needAlign) {
     swarms.forEach(swarm => swarm.alignSnodes());
   }
-  setTimeout(() => {
-    getEvents();
-  }, 200)
+  await sleep(200);
+  getEvents();
 }
 
 var setup = () => {
@@ -174,13 +177,13 @@ var draw = () => {
     swarm.rollover(mouseX, mouseY);
     swarm.display();
   });
-  // Draw all the lines
-  clients.forEach(client => {
-    client.displayDestinations();
+  // Draw all the arrows
+  arrows.forEach(arrow => {
+    line(arrow.x1, arrow.y1, arrow.x2, arrow.y2);
   });
+  // Draw all the snodes
   swarms.forEach(swarm => {
     swarm.snodes.forEach(snode => {
-      snode.displayDestinations();
       snode.rollover(mouseX, mouseY);
       snode.display();
     })

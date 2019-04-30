@@ -20,7 +20,6 @@ class Client {
     this.over = false;
     this.r = clientRadius;
     this.state = clientStateEnum.default;
-    this.destinations = [];
     this.x = 0;
     this.y = 0;
     this.statePromise = Promise.resolve();
@@ -39,31 +38,13 @@ class Client {
     this.desiredY = pos.y;
   }
 
-  setState(newState, destination=null) {
-    if (newState === this.state) {
-      if (destination) {
-        this.destinations.push(destination)
-      }
-      return;
-    }
-    this.statePromise = this.statePromise.then(async () => {
-      this.state = clientStateEnum[newState]
-      this.destinations = [destination];
-      await sleep(stateTimer / 2);
-      this.state = clientStateEnum.default;
-      this.destinations = [];
-    });
+  setState(newState) {
+    this.state = clientStateEnum[newState];
   }
 
   lerpPosition() {
     this.x = lerp(this.x, this.desiredX, 0.1);
     this.y = lerp(this.y, this.desiredY, 0.1);
-  }
-
-  displayDestinations() {
-    const destination = this.destinations[0];
-    if (!destination) return;
-    line(this.x, this.y, destination.x, destination.y);
   }
 
   display() {
