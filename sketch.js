@@ -46,6 +46,36 @@ const init = async () => {
   await getEvents();
 }
 
+const drawLegend = () => {
+  // Legend background
+  fill(255, 255, 255, 255);
+  rect(50, 50, 200, 200, 10);
+  // Default client
+  let col = clientCols[clientStateEnum.default];
+  fill(col.r, col.g, col.b, 255);
+  rect(60, 60, 20, 20, 2);
+  // Store message
+  col = snodeCols[snodeStateEnum.snodeStore];
+  fill(col.r, col.g, col.b, 255);
+  rect(60, 90, 20, 20, 2);
+  // Send p2p message
+  col = clientCols[clientStateEnum.clientP2pSend];
+  fill(col.r, col.g, col.b, 255);
+  rect(60, 120, 20, 20, 2);
+  // Retrieve message
+  col = clientCols[clientStateEnum.clientRetrieve];
+  fill(col.r, col.g, col.b, 255);
+  rect(60, 150, 20, 20, 2);
+  // Snode push message
+  col = snodeCols[snodeStateEnum.snodePush];
+  fill(col.r, col.g, col.b, 255);
+  rect(60, 180, 20, 20, 2);
+  // Snode push message
+  col = snodeCols[snodeStateEnum.snodePushed];
+  fill(col.r, col.g, col.b, 255);
+  rect(60, 210, 20, 20, 2);
+}
+
 const getClientPos = (clientId) => {
   let pos = {
     x: -1,
@@ -175,6 +205,7 @@ var setup = () => {
 var draw = () => {
   clear();
   background(100);
+  drawLegend();
   // Draw all the swarms
   swarms.forEach(swarm => {
     swarm.rollover(mouseX, mouseY);
