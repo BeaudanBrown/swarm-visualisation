@@ -102,16 +102,16 @@ const getEvents = async () => {
         }
       case 'clientP2pSend':
         {
-          if (!clients.map(client => client.clientId).includes(this_id)) return;
           const client = clients.find(client => client.clientId === this_id);
+          if (!client) return;
           const destination = clients.find(client => client.clientId === other_id);
           eventLoop = eventLoop.then(async () => addEvent(client, 'clientP2pSend', destination, 'clientP2pSend'));
           break;
         }
       case 'clientSend':
         {
-          if (!clients.map(client => client.clientId).includes(this_id)) return;
           const client = clients.find(client => client.clientId === this_id);
+          if (!client) return;
           let destination;
           swarms.forEach(swarm => {
             const possibleDestination = swarm.snodes.find(snode => snode.address === other_id);
@@ -122,15 +122,18 @@ const getEvents = async () => {
           eventLoop = eventLoop.then(async () => addEvent(client, 'clientSend', destination, 'snodeStore'));
           break;
         }
-      case 'snodeRetrieve':
+      case 'clientRetrieve':
         {
-          const swarm = swarms.find(swarm => swarm.swarmId === swarm_id);
-          if (!swarm) return;
-          const snode = swarm.snodes.find(snode => snode.address === this_id);
-          if (!snode) return;
-          const destination = clients.find(client => client.clientId === other_id);
-
-          eventLoop = eventLoop.then(async () => addEvent(snode, 'snodeRetrieve', destination, 'clientRetrieve'));
+          const client = clients.find(client => client.clientId === this_id);
+          if (!client) return;
+          let destination;
+          swarms.forEach(swarm => {
+            const possibleDestination = swarm.snodes.find(snode => snode.address === other_id);
+            if (possibleDestination) {
+              destination = possibleDestination;
+            }
+          });
+          eventLoop = eventLoop.then(async () => addEvent(client, 'clientRetrieve', destination, 'snodeRetrieve'));
           break;
         }
       case 'snodePush':
