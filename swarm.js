@@ -56,8 +56,12 @@ class Swarm {
   display() {
     fill(this.col.r, this.col.g, this.col.b, 10);
     ellipse(this.x, this.y, this.r * 2, this.r * 2);
+  }
+
+  // Display hover text
+  displayText() {
     if (this.over) {
-      fill(0);
+      fill(255);
       textAlign(CENTER);
       text(this.swarmId, this.x, this.y + this.r + 20);
     }

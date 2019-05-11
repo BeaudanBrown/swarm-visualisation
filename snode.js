@@ -60,8 +60,12 @@ class Snode {
     }
     fill(col.r, col.g, col.b, 255);
     ellipse(this.x, this.y, this.r * 2, this.r * 2);
+  }
+
+  // Display hover text
+  displayText() {
     if (this.over) {
-      fill(0);
+      fill(255);
       textAlign(CENTER);
       text(this.address, this.x, this.y + this.r + 20);
     }

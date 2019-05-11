@@ -207,9 +207,10 @@ const getEvents = async () => {
 }
 
 var setup = () => {
-  createCanvas(1000, 1000);
+  createCanvas(1200, 900);
   frameRate(30);
   init();
+  textSize(24);
 }
 
 var draw = () => {
@@ -236,6 +237,20 @@ var draw = () => {
   clients.forEach(client => {
     client.rollover(mouseX, mouseY);
     client.display();
+  });
+  // Draw all the swarms hover text
+  swarms.forEach(swarm => {
+    swarm.displayText();
+  });
+  // Draw all the snodes hover text
+  swarms.forEach(swarm => {
+    swarm.snodes.forEach(snode => {
+      snode.displayText();
+    })
+  })
+  // Draw all the clients hover text
+  clients.forEach(client => {
+    client.displayText();
   });
 }
 
