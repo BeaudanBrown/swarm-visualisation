@@ -5,9 +5,9 @@ let clients = [];
 let events = [];
 let eventLoop = Promise.resolve();
 let arrows = [];
-const baseUrl = '13.236.173.190';
-const port = '22023';
-const lokidUrl = `http://${baseUrl}:${port}/json_rpc`;
+const baseUrl = '206.81.100.174';
+const port = '6005';
+const swarmUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
 const stateTimer = 500;
 
@@ -16,9 +16,8 @@ const init = async () => {
     method: 'get_service_nodes'
   };
 
-  const response = await httpPost(lokidUrl, 'json', initRequest);
+  const snodeList = await httpPost(swarmUrl, 'json', initRequest);
 
-  const snodeList = response.result.service_node_states;
   snodeList.forEach(snodeData => {
     const addressBuf = Multibase.Buffer.from(snodeData.service_node_pubkey, 'hex');
     const address = Multibase.encode(
@@ -51,33 +50,67 @@ const init = async () => {
 }
 
 const drawLegend = () => {
+  let x = 60;
+  let y = 60;
+  textAlign(LEFT);
   // Legend background
   fill(255, 255, 255, 255);
-  rect(50, 50, 200, 200, 10);
-  // Default client
-  let col = clientCols[clientStateEnum.default];
+  rect(50, 50, 400, 220, 10);
+
+  // Default snode
+  let col = snodeCols[snodeStateEnum.default];
   fill(col.r, col.g, col.b, 255);
-  rect(60, 60, 20, 20, 2);
+  rect(x, y, 20, 20, 2);
+  fill(0);
+  text('- Snode', x + 30, y + 18 );
+
+  // Default client
+  y += 30;
+  col = clientCols[clientStateEnum.default];
+  fill(col.r, col.g, col.b, 255);
+  rect(x, y, 20, 20, 2);
+  fill(0);
+  text('- Client', x + 30, y + 18 );
+
   // Store message
+  y += 30;
   col = snodeCols[snodeStateEnum.snodeStore];
   fill(col.r, col.g, col.b, 255);
-  rect(60, 90, 20, 20, 2);
+  rect(x, y, 20, 20, 2);
+  fill(0);
+  text('- Storing a message', x + 30, y + 18 );
+
   // Send p2p message
+  y += 30;
   col = clientCols[clientStateEnum.clientP2pSend];
   fill(col.r, col.g, col.b, 255);
-  rect(60, 120, 20, 20, 2);
+  rect(x, y, 20, 20, 2);
+  fill(0);
+  text('- Sending a P2P message', x + 30, y + 18 );
+
   // Retrieve message
+  y += 30;
   col = clientCols[clientStateEnum.clientRetrieve];
   fill(col.r, col.g, col.b, 255);
-  rect(60, 150, 20, 20, 2);
+  rect(x, y, 20, 20, 2);
+  fill(0);
+  text('- Retrieving a message', x + 30, y + 18 );
+
   // Snode push message
+  y += 30;
   col = snodeCols[snodeStateEnum.snodePush];
   fill(col.r, col.g, col.b, 255);
-  rect(60, 180, 20, 20, 2);
-  // Snode push message
+  rect(x, y, 20, 20, 2);
+  fill(0);
+  text('- Propagating message', x + 30, y + 18 );
+
+  // Snode pushed a message message
+  y += 30;
   col = snodeCols[snodeStateEnum.snodePushed];
   fill(col.r, col.g, col.b, 255);
-  rect(60, 210, 20, 20, 2);
+  rect(x, y, 20, 20, 2);
+  fill(0);
+  text('- Received propagated message', x + 30, y + 18 );
 }
 
 const getClientPos = (clientId) => {
@@ -168,7 +201,7 @@ const getEvents = async () => {
           if (destination) {
             destinationSwarm.snodes.forEach(otherSnode => {
               if (otherSnode.address === this_id) return;
-              eventLoop = eventLoop.then(async () => addEvent(destination, 'snodePush', otherSnode, 'snodePush'));
+              eventLoop = eventLoop.then(async () => addEvent(destination, 'snodePush', otherSnode, 'snodePushed'));
             });
           }
           break;
