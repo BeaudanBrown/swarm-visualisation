@@ -6,23 +6,27 @@ let events = [];
 let eventLoop = Promise.resolve();
 let arrows = [];
 const baseUrl = '13.236.173.190';
-const port = '38157';
+const port = '22023';
 const lokidUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
 const stateTimer = 500;
 
 const init = async () => {
-  const response = await httpPost(lokidUrl, 'json', { method: 'get_service_nodes' })
+  const initRequest = {
+    method: 'get_service_nodes'
+  };
 
-  const snodeList = JSON.parse(response.result.as_json);
+  const response = await httpPost(lokidUrl, 'json', initRequest);
+
+  const snodeList = response.result.service_node_states;
   snodeList.forEach(snodeData => {
-    const addressBuf = Multibase.Buffer.from(snodeData.pubkey, 'hex');
+    const addressBuf = Multibase.Buffer.from(snodeData.service_node_pubkey, 'hex');
     const address = Multibase.encode(
       'base32z',
       addressBuf
     ).toString().substr(1) + '.snode';
 
-    const swarmId = snodeData.info.swarm_id.toString();
+    const swarmId = snodeData.swarm_id.toString();
     if (!swarms.map(swarm => swarm.swarmId).includes(swarmId)) {
       swarms.push(new Swarm(swarmId));
     }
@@ -110,7 +114,14 @@ const addEvent = async (origin, originState, destination, destinationState) => {
 }
 
 const getEvents = async () => {
-  const response = await httpGet(eventUrl, 'json')
+  let response;
+  try {
+    response = await httpGet(eventUrl, 'json')
+  } catch(e) {
+    print(`Error fetching events: ${e}`);
+    await sleep(200);
+    return getEvents();
+  }
   let needAlign = false;
   response.events.forEach(event => {
     const { swarm_id, this_id, event_type, other_id } = event;
@@ -143,13 +154,23 @@ const getEvents = async () => {
           const client = clients.find(client => client.clientId === this_id);
           if (!client) return;
           let destination;
+          let destinationSwarm;
           swarms.forEach(swarm => {
             const possibleDestination = swarm.snodes.find(snode => snode.address === other_id);
             if (possibleDestination) {
               destination = possibleDestination;
+              destinationSwarm = swarm;
             }
           });
+
           eventLoop = eventLoop.then(async () => addEvent(client, 'clientSend', destination, 'snodeStore'));
+
+          if (destination) {
+            destinationSwarm.snodes.forEach(otherSnode => {
+              if (otherSnode.address === this_id) return;
+              eventLoop = eventLoop.then(async () => addEvent(destination, 'snodePush', otherSnode, 'snodePush'));
+            });
+          }
           break;
         }
       case 'clientRetrieve':
@@ -193,7 +214,7 @@ const getEvents = async () => {
     swarms.forEach(swarm => swarm.alignSnodes());
   }
   await sleep(200);
-  getEvents();
+  return getEvents();
 }
 
 var setup = () => {
