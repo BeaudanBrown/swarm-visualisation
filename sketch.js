@@ -109,8 +109,8 @@ const addEvent = async (origin, originState, destination, destinationState) => {
   origin.setState('default');
   if (destination) {
     destination.setState('default');
+    arrows = [];
   }
-  arrows = [];
 }
 
 const getEvents = async () => {
@@ -146,6 +146,7 @@ const getEvents = async () => {
           const client = clients.find(client => client.clientId === this_id);
           if (!client) return;
           const destination = clients.find(client => client.clientId === other_id);
+          if (!destination) return;
           eventLoop = eventLoop.then(async () => addEvent(client, 'clientP2pSend', destination, 'clientP2pSend'));
           break;
         }
@@ -164,7 +165,6 @@ const getEvents = async () => {
           });
 
           eventLoop = eventLoop.then(async () => addEvent(client, 'clientSend', destination, 'snodeStore'));
-
           if (destination) {
             destinationSwarm.snodes.forEach(otherSnode => {
               if (otherSnode.address === this_id) return;
@@ -185,17 +185,6 @@ const getEvents = async () => {
             }
           });
           eventLoop = eventLoop.then(async () => addEvent(client, 'clientRetrieve', destination, 'snodeRetrieve'));
-          break;
-        }
-      case 'snodePush':
-        {
-          const swarm = swarms.find(swarm => swarm.swarmId === swarm_id);
-          if (!swarm) return;
-          const snode = swarm.snodes.find(snode => snode.address === this_id);
-          if (!snode) return;
-          const destination = swarm.snodes.find(snode => snode.address === other_id);
-
-          eventLoop = eventLoop.then(async () => addEvent(snode, 'snodePush', destination, 'snodePush'));
           break;
         }
       case 'changedSwarm':
