@@ -6,7 +6,7 @@ class Swarm {
     this.over = false;
     this.snodes = [];
     this.r = swarmRadius;
-    this.col = {r: 255, g: 255, b: 255};
+    this.col = {r: 0, g: 95, b: 97};
     this.angleFuzz = random() * 2 * PI;
     this.x = 0;
     this.y = 0;
@@ -54,8 +54,11 @@ class Swarm {
   }
 
   display() {
+    push();
+    stroke(120, 190, 32)
     fill(this.col.r, this.col.g, this.col.b, 10);
     ellipse(this.x, this.y, this.r * 2, this.r * 2);
+    pop();
   }
 
   // Display hover text
@@ -63,7 +66,7 @@ class Swarm {
     if (this.over) {
       fill(255);
       textAlign(CENTER);
-      text(this.swarmId, this.x, this.y + this.r + 20);
+      text(`Swarm ID: ${this.swarmId}`, this.x, this.y + this.r + 20);
     }
   }
 }

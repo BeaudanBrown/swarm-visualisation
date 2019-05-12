@@ -10,7 +10,7 @@ const snodeStateEnum = {
 };
 
 const snodeCols = {
-  [snodeStateEnum.default]: {r: 135, g: 206, b: 250},
+  [snodeStateEnum.default]: {r: 0, g: 133, b: 34},
   [snodeStateEnum.snodeStore]: {r: 51, g: 255, b: 51},
   [snodeStateEnum.snodeRetrieve]: {r: 204, g: 0, b: 204},
   [snodeStateEnum.snodePush]: {r: 0, g: 0, b: 153},
@@ -67,7 +67,7 @@ class Snode {
     if (this.over) {
       fill(255);
       textAlign(CENTER);
-      text(this.address, this.x, this.y + this.r + 20);
+      text(`Service Node Address: ${this.address.substring(0, 5)}...${this.address.substring(this.address.length - 9, this.address.length)}`, this.x, this.y + this.r + 20);
     }
   }
 }

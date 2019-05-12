@@ -13,6 +13,12 @@ const swarmUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
 const stateTimer = 500;
 
+let ratio;
+let logoWidth;
+let logoHeight;
+let logoX;
+let logoY;
+
 const init = async () => {
   const initRequest = {
     method: 'get_service_nodes'
@@ -53,13 +59,15 @@ const init = async () => {
   await getEvents();
 }
 
-const drawLegend = () => {
-  let x = 60;
-  let y = 60;
+const drawLegend = (logoX, logoY) => {
   textAlign(LEFT);
   // Legend background
   fill(255, 255, 255, 255);
-  rect(50, 50, 400, 220, 10);
+  let x = logoX;
+  let y = logoY * 5.5;
+  rect(x, y, 400, 220, 10);
+  x += 10;
+  y += 10;
 
   // Default snode
   let col = snodeCols[snodeStateEnum.default];
@@ -244,17 +252,31 @@ const getEvents = async () => {
   return getEvents();
 }
 
+var preload = () => {
+  icon = loadImage('assets/LokiIcon.png');
+}
+
 var setup = () => {
-  createCanvas(1200, 900);
+  createCanvas(windowWidth, windowHeight);
   frameRate(30);
   init();
   textSize(24);
+  ratio = 4167 / 1534;
+  logoWidth = windowWidth * 0.2;
+  logoHeight = logoWidth / ratio;
+  logoX = logoWidth * 0.2;
+  logoY = windowHeight * 0.05;
 }
 
 var draw = () => {
   clear();
-  background(100);
-  drawLegend();
+  background(0, 38, 58);
+
+  image(icon, logoX, logoY, logoWidth, logoHeight);
+  fill(255);
+  textAlign(LEFT);
+  text(`https://github.com/loki-project/loki-messenger/`, logoX * 0.5, logoY * 5);
+  drawLegend(logoX, logoY);
   // Draw all the swarms
   swarms.forEach(swarm => {
     swarm.rollover(mouseX, mouseY);
