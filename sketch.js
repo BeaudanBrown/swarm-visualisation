@@ -5,8 +5,10 @@ let clients = [];
 let events = [];
 let eventLoop = Promise.resolve();
 let arrows = [];
-const baseUrl = '206.81.100.174';
-const port = '6005';
+// const baseUrl = '206.81.100.174';
+// const port = '6005';
+const baseUrl = '13.236.173.190';
+const port = '22023';
 const swarmUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
 const stateTimer = 500;
@@ -16,7 +18,9 @@ const init = async () => {
     method: 'get_service_nodes'
   };
 
-  const snodeList = await httpPost(swarmUrl, 'json', initRequest);
+  // const snodeList = await httpPost(swarmUrl, 'json', initRequest);
+  const response = await httpPost(swarmUrl, 'json', initRequest);
+  const snodeList = response.result.service_node_states;
 
   snodeList.forEach(snodeData => {
     const addressBuf = Multibase.Buffer.from(snodeData.service_node_pubkey, 'hex');
@@ -136,6 +140,7 @@ const addEvent = async (origin, originState, destination, destinationState) => {
       y1: origin.y,
       x2: destination.x,
       y2: destination.y,
+      text: originState,
     });
   }
   await sleep(stateTimer);
@@ -200,7 +205,7 @@ const getEvents = async () => {
           eventLoop = eventLoop.then(async () => addEvent(client, 'clientSend', destination, 'snodeStore'));
           if (destination) {
             destinationSwarm.snodes.forEach(otherSnode => {
-              if (otherSnode.address === this_id) return;
+              if (otherSnode.address === other_id) return;
               eventLoop = eventLoop.then(async () => addEvent(destination, 'snodePush', otherSnode, 'snodePushed'));
             });
           }
@@ -284,6 +289,13 @@ var draw = () => {
   // Draw all the clients hover text
   clients.forEach(client => {
     client.displayText();
+  });
+  arrows.forEach(arrow => {
+    const textX = (arrow.x1 + arrow.x2) / 2
+    const textY = (arrow.y1 + arrow.y2) / 2
+    fill(255);
+    textAlign(CENTER);
+    text(arrow.text, textX, textY);
   });
 }
 
