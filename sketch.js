@@ -1,32 +1,37 @@
 /*jshint esversion: 8 */
 
+// Set this to false to fall back to using messenger net (no lokid)
+const USE_CONSENSUS_NET = true;
+
 let swarms = [];
 let clients = [];
 let events = [];
 let eventLoop = Promise.resolve();
 let arrows = [];
-// const baseUrl = '206.81.100.174';
-// const port = '6005';
-const baseUrl = '13.236.173.190';
-const port = '22023';
-const swarmUrl = `http://${baseUrl}:${port}/json_rpc`;
-const eventUrl = `http://${baseUrl}:${port}/get_events`;
-const stateTimer = 1000;
-
 let ratio;
 let logoWidth;
 let logoHeight;
 let logoX;
 let logoY;
 
+const baseUrl = USE_CONSENSUS_NET ? '206.81.100.174' : '13.236.173.190';
+const port = USE_CONSENSUS_NET ? '6005': 22023;
+const swarmUrl = `http://${baseUrl}:${port}/json_rpc`;
+const eventUrl = `http://${baseUrl}:${port}/get_events`;
+const stateTimer = 1000;
+
 const init = async () => {
   const initRequest = {
     method: 'get_service_nodes'
   };
+  let snodeList;
 
-  // const snodeList = await httpPost(swarmUrl, 'json', initRequest);
-  const response = await httpPost(swarmUrl, 'json', initRequest);
-  const snodeList = response.result.service_node_states;
+  if (USE_CONSENSUS_NET) {
+    snodeList = await httpPost(swarmUrl, 'json', initRequest);
+  } else {
+    const response = await httpPost(swarmUrl, 'json', initRequest);
+    snodeList = response.result.service_node_states;
+  }
 
   snodeList.forEach(snodeData => {
     const addressBuf = Multibase.Buffer.from(snodeData.service_node_pubkey, 'hex');
