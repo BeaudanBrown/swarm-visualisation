@@ -11,7 +11,7 @@ const baseUrl = '13.236.173.190';
 const port = '22023';
 const swarmUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
-const stateTimer = 500;
+const stateTimer = 1000;
 
 let ratio;
 let logoWidth;
@@ -62,10 +62,13 @@ const init = async () => {
 const drawLegend = (logoX, logoY) => {
   textAlign(LEFT);
   // Legend background
-  fill(255, 255, 255, 255);
+  push();
+  stroke(120, 190, 32)
+  fill(255, 255, 255, 30);
   let x = logoX;
   let y = logoY * 5.5;
   rect(x, y, 400, 220, 10);
+  pop();
   x += 10;
   y += 10;
 
@@ -73,7 +76,7 @@ const drawLegend = (logoX, logoY) => {
   let col = snodeCols[snodeStateEnum.default];
   fill(col.r, col.g, col.b, 255);
   rect(x, y, 20, 20, 2);
-  fill(0);
+  fill(255);
   text('- Snode', x + 30, y + 18 );
 
   // Default client
@@ -81,7 +84,7 @@ const drawLegend = (logoX, logoY) => {
   col = clientCols[clientStateEnum.default];
   fill(col.r, col.g, col.b, 255);
   rect(x, y, 20, 20, 2);
-  fill(0);
+  fill(255);
   text('- Client', x + 30, y + 18 );
 
   // Store message
@@ -89,7 +92,7 @@ const drawLegend = (logoX, logoY) => {
   col = snodeCols[snodeStateEnum.snodeStore];
   fill(col.r, col.g, col.b, 255);
   rect(x, y, 20, 20, 2);
-  fill(0);
+  fill(255);
   text('- Storing a message', x + 30, y + 18 );
 
   // Send p2p message
@@ -97,7 +100,7 @@ const drawLegend = (logoX, logoY) => {
   col = clientCols[clientStateEnum.clientP2pSend];
   fill(col.r, col.g, col.b, 255);
   rect(x, y, 20, 20, 2);
-  fill(0);
+  fill(255);
   text('- Sending a P2P message', x + 30, y + 18 );
 
   // Retrieve message
@@ -105,7 +108,7 @@ const drawLegend = (logoX, logoY) => {
   col = clientCols[clientStateEnum.clientRetrieve];
   fill(col.r, col.g, col.b, 255);
   rect(x, y, 20, 20, 2);
-  fill(0);
+  fill(255);
   text('- Retrieving a message', x + 30, y + 18 );
 
   // Snode push message
@@ -113,7 +116,7 @@ const drawLegend = (logoX, logoY) => {
   col = snodeCols[snodeStateEnum.snodePush];
   fill(col.r, col.g, col.b, 255);
   rect(x, y, 20, 20, 2);
-  fill(0);
+  fill(255);
   text('- Propagating message', x + 30, y + 18 );
 
   // Snode pushed a message message
@@ -121,7 +124,7 @@ const drawLegend = (logoX, logoY) => {
   col = snodeCols[snodeStateEnum.snodePushed];
   fill(col.r, col.g, col.b, 255);
   rect(x, y, 20, 20, 2);
-  fill(0);
+  fill(255);
   text('- Received propagated message', x + 30, y + 18 );
 }
 
@@ -283,9 +286,12 @@ var draw = () => {
     swarm.display();
   });
   // Draw all the arrows
+  push();
+  stroke(255);
   arrows.forEach(arrow => {
     line(arrow.x1, arrow.y1, arrow.x2, arrow.y2);
   });
+  pop();
   // Draw all the snodes
   swarms.forEach(swarm => {
     swarm.snodes.forEach(snode => {
