@@ -135,9 +135,10 @@ const drawLegend = (logoX, logoY) => {
 
 const getClientPos = (clientId) => {
   let pos = {
-    x: -1,
-    y: -1,
-  }
+    x: 0,
+    y: 0,
+  };
+
   const idx = clients.findIndex(client => client.clientId === clientId);
   if (idx === -1) return pos;
   const numClients = clients.length;
@@ -184,7 +185,7 @@ const getEvents = async () => {
       case 'clientStart':
         {
           if (clients.map(client => client.clientId).includes(this_id)) return;
-          clients.push(new Client(this_id));
+          clients.push(new Client(this_id, other_id));
           const newPos = getClientPos(this_id);
           clients[clients.length - 1].setPosition(newPos);
 
@@ -319,10 +320,6 @@ var draw = () => {
       snode.displayText();
     })
   })
-  // Draw all the clients hover text
-  clients.forEach(client => {
-    client.displayText();
-  });
   arrows.forEach(arrow => {
     const textX = (arrow.x1 + arrow.x2) / 2
     const textY = (arrow.y1 + arrow.y2) / 2

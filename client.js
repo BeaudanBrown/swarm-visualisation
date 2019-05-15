@@ -15,11 +15,12 @@ const clientCols = {
 };
 
 class Client {
-  constructor(clientId) {
+  constructor(clientId, clientName) {
     this.clientId = clientId;
     this.over = false;
     this.r = clientRadius;
     this.state = clientStateEnum.default;
+    this.name = clientName;
     this.x = 0;
     this.y = 0;
     this.statePromise = Promise.resolve();
@@ -54,14 +55,11 @@ class Client {
     const col = clientCols[this.state];
     fill(col.r, col.g, col.b, 255);
     ellipse(this.x, this.y, this.r * 2, this.r * 2);
-  }
-
-  // Display hover text
-  displayText() {
-    if (this.over) {
-      fill(255);
-      textAlign(CENTER);
-      text(this.clientId, this.x, this.y + this.r + 20);
-    }
+    fill(255);
+    textAlign(CENTER);
+    const name = this.name == ''
+      ? `${this.clientId.substring(0, 5)}...${this.clientId.substring(this.clientId.length - 5, this.clientId.length)}`
+      : `${this.name}: ${this.clientId.substring(0, 5)}...${this.clientId.substring(this.clientId.length - 5, this.clientId.length)}`;
+    text(name, this.x, this.y + this.r + 20);
   }
 }
