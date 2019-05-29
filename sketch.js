@@ -1,7 +1,7 @@
 /*jshint esversion: 8 */
 
 // Set this to false to fall back to using messenger net (no lokid)
-const USE_CONSENSUS_NET = true;
+const USE_CONSENSUS_NET = false;
 
 let swarms = [];
 let clients = [];
@@ -14,7 +14,7 @@ let logoHeight;
 let logoX;
 let logoY;
 
-const baseUrl = USE_CONSENSUS_NET ? '206.81.100.174' : '13.236.173.190';
+const baseUrl = USE_CONSENSUS_NET ? '206.81.100.174' : '13.238.53.205';
 const port = USE_CONSENSUS_NET ? '6005': 22023;
 const swarmUrl = `http://${baseUrl}:${port}/json_rpc`;
 const eventUrl = `http://${baseUrl}:${port}/get_events`;
